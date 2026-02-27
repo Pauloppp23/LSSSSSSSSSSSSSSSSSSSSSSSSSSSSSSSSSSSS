@@ -1290,7 +1290,7 @@ const produtosDB = [
     }
 
     .game-hud b {
-        color: #ff0 !important; /* Amarelo neon para os números */
+        color: #ff0 !important; 
         font-size: 16px !important;
     }
 
@@ -1331,7 +1331,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const produtosDB = [
-        { id: 1, imagem: "https://images.unsplash.com/photo-1611606063065-ee7946f0787a?w=400", nome: {pt: "Servidor Discord", en: "Discord Server"}, categoria: {pt: "Serviços", en: "Services"}, descricao: {pt: "Criação completa.", en: "Complete creation."}, preco: {pt: "R$ 150,00", en: "$ 30.00"} },
+        // ... (seus outros produtos aqui)
         { id: 5, imagem: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400", nome: {pt: "Jogo da Cobrinha", en: "Snake Game"}, categoria: {pt: "Jogos", en: "Games"}, descricao: {pt: "O clássico no navegador!", en: "Classic browser game!"}, preco: {pt: "Grátis", en: "Free"} }
     ];
 
@@ -1339,7 +1339,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const catalogoContainer = document.getElementById('catalogo-produtos');
     let gameInterval, timerInterval;
 
-    // --- LÓGICA DO JOGO ---
     const initSnakeGame = (canvasId, productId) => {
         const canvas = document.getElementById(canvasId);
         const ctx = canvas.getContext('2d');
@@ -1370,12 +1369,14 @@ document.addEventListener('DOMContentLoaded', () => {
             ctx.fillStyle = "#000";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+            // Desenha a cobra
             for(let i = 0; i < snake.length; i++) {
-                ctx.fillStyle = i == 0 ? "#0ff" : "#fff"; // Cabeça Ciano, corpo branco
+                ctx.fillStyle = i == 0 ? "#0ff" : "#fff"; 
                 ctx.fillRect(snake[i].x, snake[i].y, box, box);
             }
 
-            ctx.fillStyle = "#f0f"; // Comida Magenta
+            // Desenha a comida
+            ctx.fillStyle = "#f0f"; 
             ctx.fillRect(food.x, food.y, box, box);
 
             let snakeX = snake[0].x;
@@ -1386,15 +1387,19 @@ document.addEventListener('DOMContentLoaded', () => {
             if(direction == "RIGHT") snakeX += box;
             if(direction == "DOWN") snakeY += box;
 
+            // Lógica de comer a maçã
             if(snakeX == food.x && snakeY == food.y) {
                 score += 10;
                 scoreElement.innerText = score;
                 food = { x: Math.floor(Math.random() * 19) * box, y: Math.floor(Math.random() * 19) * box };
-            } else { snake.pop(); }
+            } else { 
+                snake.pop(); 
+            }
 
             let newHead = { x: snakeX, y: snakeY };
 
-            // COLISÃO CORRIGIDA: Só morre se sair totalmente do limite
+            // --- FÍSICA DE COLISÃO CORRIGIDA ---
+            // A cobra só morre se tentar sair da área visível (0 a 200)
             if(snakeX < 0 || snakeX >= canvas.width || snakeY < 0 || snakeY >= canvas.height || collision(newHead, snake)) {
                 clearInterval(gameInterval);
                 clearInterval(timerInterval);
@@ -1403,6 +1408,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 resetCard(productId);
                 return;
             }
+
             snake.unshift(newHead);
         }
         gameInterval = setInterval(draw, 100);
@@ -1472,6 +1478,7 @@ document.addEventListener('DOMContentLoaded', () => {
 </body>
 
 </html>
+
 
 
 
