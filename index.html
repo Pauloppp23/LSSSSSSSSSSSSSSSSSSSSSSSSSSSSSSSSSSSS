@@ -981,7 +981,9 @@
             verifiedBadge: "Verified"
         }
     };
-    
+
+
+            
 const produtosDB = [
     { 
         id: 1, 
@@ -1255,7 +1257,145 @@ const produtosDB = [
     setLanguage(currentLang);
 });
     </script>
-    
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. BANCO DE DADOS E TRADUÇÕES
+    const translations = {
+        'pt': { 
+            buyButton: "Comprar",
+            settingsTitle: "Configurações",
+            cursorStatusOn: "Ativado",
+            cursorStatusOff: "Desativado"
+            // ... adicione as outras chaves que você já tem aqui se necessário
+        },
+        'en': { 
+            buyButton: "Buy",
+            settingsTitle: "Settings",
+            cursorStatusOn: "Enabled",
+            cursorStatusOff: "Disabled"
+        }
+    };
+
+    const produtosDB = [
+        { id: 1, imagem: "https://images.unsplash.com/photo-1611606063065-ee7946f0787a?w=400", nome: {pt: "Servidor de Discord Profissional", en: "Professional Discord Server"}, categoria: {pt: "Serviços", en: "Services"}, descricao: {pt: "Criação de um servidor completo.", en: "Complete server creation."}, preco: {pt: "R$ 150,00", en: "$ 30.00"} },
+        { id: 2, imagem: "https://images.unsplash.com/photo-1593720213428-28a5b9e-94613?w=400", nome: {pt: "Bot de Discord Personalizado", en: "Custom Discord Bot"}, categoria: {pt: "Bots", en: "Bots"}, descricao: {pt: "Desenvolvemos um bot exclusivo.", en: "Exclusive bot development."}, preco: {pt: "R$ 300,00", en: "$ 60.00"} },
+        { id: 3, imagem: "https://images.unsplash.com/photo-1614680376739-414d95ff4350?w=400", nome: {pt: "Pacote de Artes", en: "Server Art Pack"}, categoria: {pt: "Design", en: "Design"}, descricao: {pt: "Kit de design completo.", en: "Full design kit."}, preco: {pt: "R$ 80,00", en: "$ 16.00"} },
+        { id: 4, imagem: "https://images.unsplash.com/photo-1555949963-ff98c8726514?w=400", nome: {pt: "Segurança", en: "Security Setup"}, categoria: {pt: "Serviços", en: "Services"}, descricao: {pt: "Proteção contra ataques.", en: "Attack protection."}, preco: {pt: "R$ 75,00", en: "$ 15.00"} },
+        { id: 5, imagem: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400", nome: {pt: "Jogo da Cobrinha", en: "Snake Game"}, categoria: {pt: "Jogos", en: "Games"}, descricao: {pt: "Jogue o clássico diretamente no navegador!", en: "Play the classic in your browser!"}, preco: {pt: "Grátis", en: "Free"} }
+    ];
+
+    // 2. SELETORES GERAIS
+    const root = document.documentElement;
+    const catalogoContainer = document.getElementById('catalogo-produtos');
+    const searchInput = document.getElementById('search-input');
+    const welcomeScreen = document.getElementById('welcome-screen');
+    let currentLang = localStorage.getItem('language') || 'pt';
+
+    // 3. LÓGICA DO SNAKE GAME
+    const initSnakeGame = (canvasId) => {
+        const canvas = document.getElementById(canvasId);
+        if(!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const box = 10;
+        let snake = [{ x: 10 * box, y: 10 * box }];
+        let direction = "RIGHT";
+        let food = { x: Math.floor(Math.random() * 19) * box, y: Math.floor(Math.random() * 19) * box };
+
+        document.addEventListener("keydown", (e) => {
+            if(e.keyCode == 37 && direction != "RIGHT") direction = "LEFT";
+            else if(e.keyCode == 38 && direction != "DOWN") direction = "UP";
+            else if(e.keyCode == 39 && direction != "LEFT") direction = "RIGHT";
+            else if(e.keyCode == 40 && direction != "UP") direction = "DOWN";
+        });
+
+        function draw() {
+            ctx.fillStyle = "#000";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            for(let i = 0; i < snake.length; i++) {
+                ctx.fillStyle = i == 0 ? getComputedStyle(root).getPropertyValue('--accent-color').trim() || "#00ff00" : "#fff";
+                ctx.fillRect(snake[i].x, snake[i].y, box, box);
+            }
+            ctx.fillStyle = "red";
+            ctx.fillRect(food.x, food.y, box, box);
+
+            let snakeX = snake[0].x;
+            let snakeY = snake[0].y;
+            if(direction == "LEFT") snakeX -= box;
+            if(direction == "UP") snakeY -= box;
+            if(direction == "RIGHT") snakeX += box;
+            if(direction == "DOWN") snakeY += box;
+
+            if(snakeX == food.x && snakeY == food.y) {
+                food = { x: Math.floor(Math.random() * 19) * box, y: Math.floor(Math.random() * 19) * box };
+            } else { snake.pop(); }
+
+            let newHead = { x: snakeX, y: snakeY };
+            if(snakeX < 0 || snakeX >= canvas.width || snakeY < 0 || snakeY >= canvas.height) clearInterval(game);
+            snake.unshift(newHead);
+        }
+        let game = setInterval(draw, 100);
+    };
+
+    // 4. RENDERIZAÇÃO DA LOJA
+    const renderizarProdutos = (produtos) => {
+        if(!catalogoContainer) return;
+        catalogoContainer.innerHTML = '';
+        produtos.forEach(p => {
+            const card = document.createElement('div');
+            card.className = 'produto-card';
+            card.innerHTML = `
+                <div id="media-container-${p.id}">
+                    <img src="${p.imagem}" class="produto-imagem">
+                </div>
+                <div class="produto-info">
+                    <span class="produto-categoria">${p.categoria[currentLang]}</span>
+                    <h3>${p.nome[currentLang]}</h3>
+                    <p>${p.descricao[currentLang]}</p>
+                    <div class="produto-footer">
+                        <span class="produto-preco">${p.preco[currentLang]}</span>
+                        <button class="btn-comprar" data-id="${p.id}">
+                            ${p.id === 5 ? (currentLang === 'pt' ? 'Jogar' : 'Play') : (translations[currentLang].buyButton)}
+                        </button>
+                    </div>
+                </div>`;
+            catalogoContainer.appendChild(card);
+        });
+
+        // Eventos dos botões
+        document.querySelectorAll('.btn-comprar').forEach(btn => {
+            btn.onclick = function() {
+                const id = parseInt(this.dataset.id);
+                if(id === 5) {
+                    const container = document.getElementById(`media-container-5`);
+                    container.innerHTML = `<canvas id="snakeCanvas" width="200" height="200" style="width:100%; border-radius:8px;"></canvas>`;
+                    initSnakeGame('snakeCanvas');
+                    this.style.display = 'none';
+                } else {
+                    alert('Produto adicionado ao carrinho!');
+                }
+            };
+        });
+    };
+
+    // 5. INICIALIZAÇÃO E IDIOMA
+    const setLanguage = (lang) => {
+        currentLang = lang;
+        localStorage.setItem('language', lang);
+        renderizarProdutos(produtosDB);
+        // Aqui você chamaria sua função de traduzir textos estáticos do site
+    };
+
+    // Chamar inicializadores
+    renderizarProdutos(produtosDB);
+    if(welcomeScreen) {
+        document.getElementById('enter-site-btn')?.addEventListener('click', () => {
+            welcomeScreen.style.display = 'none';
+        });
+    }
+});
+</script>
+
 </body>
 
 </html>
+
