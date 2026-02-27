@@ -1258,30 +1258,88 @@ const produtosDB = [
 });
     </script>
 
-    <script>
+<style>
+    /* --- CONTAINER DO JOGO (CARD) --- */
+    #media-container-5 {
+        display: flex;
+        flex-direction: column;
+        border: 2px solid #0ff; 
+        border-radius: 8px;
+        background: #0d0221; 
+        box-shadow: 0 0 15px rgba(0, 255, 255, 0.5), inset 0 0 10px rgba(0, 255, 255, 0.2);
+        overflow: hidden;
+        margin-bottom: 10px;
+    }
+
+    /* --- MENU/HUD CYBERPUNK --- */
+    .game-hud {
+        display: flex; 
+        justify-content: space-between; 
+        align-items: center; 
+        padding: 10px !important; 
+        background: #1a1a2e !important; 
+        border-bottom: 2px dashed #0ff !important;
+    }
+
+    .game-hud span {
+        font-family: 'Courier New', monospace;
+        font-size: 14px !important;
+        color: #fff !important;
+        text-shadow: 0 0 8px #f0f;
+        font-weight: bold;
+    }
+
+    .game-hud b {
+        color: #ff0 !important; /* Amarelo neon para os números */
+        font-size: 16px !important;
+    }
+
+    /* --- BOTÃO X (ESTILO WINDOWS/CYBER) --- */
+    #exit-game {
+        background: transparent !important;
+        color: #f00 !important;
+        border: 1.5px solid #f00 !important;
+        cursor: pointer;
+        padding: 0px 8px !important;
+        font-size: 14px !important;
+        font-weight: bold;
+        border-radius: 4px;
+        transition: 0.3s;
+        line-height: 1.5;
+    }
+
+    #exit-game:hover {
+        background: #f00 !important;
+        color: #000 !important;
+        box-shadow: 0 0 10px #f00;
+    }
+
+    /* --- CANVAS --- */
+    #snakeCanvas {
+        display: block;
+        width: 100%;
+        background: #000;
+        image-rendering: pixelated;
+    }
+</style>
+
+<script>
 document.addEventListener('DOMContentLoaded', () => {
-    // --- 1. CONFIGURAÇÕES E DADOS ---
     const translations = {
-        'pt': { buyButton: "Comprar", playButton: "Jogar", score: "Pontos", time: "Tempo", exit: "Sair" },
-        'en': { buyButton: "Buy", playButton: "Play", score: "Score", time: "Time", exit: "Exit" }
+        'pt': { buyButton: "Comprar", playButton: "Jogar", score: "PTS", time: "TEMPO" },
+        'en': { buyButton: "Buy", playButton: "Play", score: "PTS", time: "TIME" }
     };
 
     const produtosDB = [
-        { id: 1, imagem: "https://images.unsplash.com/photo-1611606063065-ee7946f0787a?w=400", nome: {pt: "Servidor de Discord Profissional", en: "Professional Discord Server"}, categoria: {pt: "Serviços", en: "Services"}, descricao: {pt: "Criação de um servidor completo.", en: "Complete server creation."}, preco: {pt: "R$ 150,00", en: "$ 30.00"} },
-        { id: 2, imagem: "https://images.unsplash.com/photo-1593720213428-28a5b9e-94613?w=400", nome: {pt: "Bot de Discord Personalizado", en: "Custom Discord Bot"}, categoria: {pt: "Bots", en: "Bots"}, descricao: {pt: "Desenvolvemos um bot exclusivo.", en: "Exclusive bot development."}, preco: {pt: "R$ 300,00", en: "$ 60.00"} },
-        { id: 3, imagem: "https://images.unsplash.com/photo-1614680376739-414d95ff4350?w=400", nome: {pt: "Pacote de Artes", en: "Server Art Pack"}, categoria: {pt: "Design", en: "Design"}, descricao: {pt: "Kit de design completo.", en: "Full design kit."}, preco: {pt: "R$ 80,00", en: "$ 16.00"} },
-        { id: 4, imagem: "https://images.unsplash.com/photo-1555949963-ff98c8726514?w=400", nome: {pt: "Segurança", en: "Security Setup"}, categoria: {pt: "Serviços", en: "Services"}, descricao: {pt: "Proteção contra ataques.", en: "Attack protection."}, preco: {pt: "R$ 75,00", en: "$ 15.00"} },
-        { id: 5, imagem: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400", nome: {pt: "Jogo da Cobrinha", en: "Snake Game"}, categoria: {pt: "Jogos", en: "Games"}, descricao: {pt: "Jogue o clássico diretamente no navegador!", en: "Play the classic in your browser!"}, preco: {pt: "Grátis", en: "Free"} }
+        { id: 1, imagem: "https://images.unsplash.com/photo-1611606063065-ee7946f0787a?w=400", nome: {pt: "Servidor Discord", en: "Discord Server"}, categoria: {pt: "Serviços", en: "Services"}, descricao: {pt: "Criação completa.", en: "Complete creation."}, preco: {pt: "R$ 150,00", en: "$ 30.00"} },
+        { id: 5, imagem: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400", nome: {pt: "Jogo da Cobrinha", en: "Snake Game"}, categoria: {pt: "Jogos", en: "Games"}, descricao: {pt: "O clássico no navegador!", en: "Classic browser game!"}, preco: {pt: "Grátis", en: "Free"} }
     ];
 
     let currentLang = localStorage.getItem('language') || 'pt';
     const catalogoContainer = document.getElementById('catalogo-produtos');
-    const root = document.documentElement;
-
-    // Variáveis globais do controle do jogo
     let gameInterval, timerInterval;
 
-    // --- 2. LÓGICA DO SNAKE ARCADE ---
+    // --- LÓGICA DO JOGO ---
     const initSnakeGame = (canvasId, productId) => {
         const canvas = document.getElementById(canvasId);
         const ctx = canvas.getContext('2d');
@@ -1292,7 +1350,6 @@ document.addEventListener('DOMContentLoaded', () => {
         let score = 0;
         let seconds = 0;
 
-        // Atualiza HUD
         const scoreElement = document.getElementById('score-val');
         const timeElement = document.getElementById('time-val');
 
@@ -1314,11 +1371,11 @@ document.addEventListener('DOMContentLoaded', () => {
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             for(let i = 0; i < snake.length; i++) {
-                ctx.fillStyle = i == 0 ? getComputedStyle(root).getPropertyValue('--accent-color').trim() || "#00ff00" : "#fff";
+                ctx.fillStyle = i == 0 ? "#0ff" : "#fff"; // Cabeça Ciano, corpo branco
                 ctx.fillRect(snake[i].x, snake[i].y, box, box);
             }
 
-            ctx.fillStyle = "red";
+            ctx.fillStyle = "#f0f"; // Comida Magenta
             ctx.fillRect(food.x, food.y, box, box);
 
             let snakeX = snake[0].x;
@@ -1337,13 +1394,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
             let newHead = { x: snakeX, y: snakeY };
 
-            // Game Over
-            if(snakeX < 0 || snakeX >= canvas.width || snakeY < 0 || snakeY >= canvas.height || 
-               snake.some((seg, index) => index !== 0 && seg.x === newHead.x && seg.y === newHead.y)) {
+            // COLISÃO CORRIGIDA: Só morre se sair totalmente do limite
+            if(snakeX < 0 || snakeX >= canvas.width || snakeY < 0 || snakeY >= canvas.height || collision(newHead, snake)) {
                 clearInterval(gameInterval);
                 clearInterval(timerInterval);
                 document.removeEventListener("keydown", control);
-                alert(`Game Over! Score: ${score}`);
+                alert("GAME OVER! SCORE: " + score);
                 resetCard(productId);
                 return;
             }
@@ -1352,13 +1408,19 @@ document.addEventListener('DOMContentLoaded', () => {
         gameInterval = setInterval(draw, 100);
     };
 
+    function collision(head, array) {
+        for(let i = 0; i < array.length; i++) {
+            if(head.x == array[i].x && head.y == array[i].y) return true;
+        }
+        return false;
+    }
+
     const resetCard = (id) => {
         clearInterval(gameInterval);
         clearInterval(timerInterval);
         renderizarProdutos(produtosDB);
     };
 
-    // --- 3. RENDERIZAÇÃO ---
     const renderizarProdutos = (produtos) => {
         if(!catalogoContainer) return;
         catalogoContainer.innerHTML = '';
@@ -1366,15 +1428,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const card = document.createElement('div');
             card.className = 'produto-card';
             card.innerHTML = `
-                <div id="media-container-${p.id}" class="media-box">
-                    <img src="${p.imagem}" class="produto-imagem">
+                <div id="media-container-${p.id}">
+                    <img src="${p.imagem}" class="produto-imagem" style="width:100%; display:block;">
                 </div>
                 <div class="produto-info">
-                    <span class="produto-categoria">${p.categoria[currentLang]}</span>
                     <h3>${p.nome[currentLang]}</h3>
                     <p>${p.descricao[currentLang]}</p>
                     <div class="produto-footer">
-                        <span class="produto-preco">${p.preco[currentLang]}</span>
+                        <span>${p.preco[currentLang]}</span>
                         <button class="btn-comprar" data-id="${p.id}">
                             ${p.id === 5 ? translations[currentLang].playButton : translations[currentLang].buyButton}
                         </button>
@@ -1390,12 +1451,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     const container = document.getElementById(`media-container-5`);
                     this.style.display = 'none';
                     container.innerHTML = `
-                        <div style="display:flex; justify-content:space-between; background:#111; color:#fff; padding:5px; font-family:monospace; font-size:12px;">
+                        <div class="game-hud">
                             <span>${translations[currentLang].score}: <b id="score-val">0</b></span>
                             <span>${translations[currentLang].time}: <b id="time-val">0s</b></span>
-                            <button id="exit-game" style="background:red; border:none; color:white; cursor:pointer; padding:0 5px;">X</button>
+                            <button id="exit-game">X</button>
                         </div>
-                        <canvas id="snakeCanvas" width="200" height="200" style="width:100%; background:#000;"></canvas>
+                        <canvas id="snakeCanvas" width="200" height="200"></canvas>
                     `;
                     document.getElementById('exit-game').onclick = () => resetCard(5);
                     initSnakeGame('snakeCanvas', 5);
@@ -1411,5 +1472,6 @@ document.addEventListener('DOMContentLoaded', () => {
 </body>
 
 </html>
+
 
 
