@@ -1257,23 +1257,13 @@ const produtosDB = [
     setLanguage(currentLang);
 });
     </script>
-<script>
+
+    <script>
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. BANCO DE DADOS E TRADUÇÕES
+    // --- 1. CONFIGURAÇÕES E DADOS ---
     const translations = {
-        'pt': { 
-            buyButton: "Comprar",
-            settingsTitle: "Configurações",
-            cursorStatusOn: "Ativado",
-            cursorStatusOff: "Desativado"
-            // ... adicione as outras chaves que você já tem aqui se necessário
-        },
-        'en': { 
-            buyButton: "Buy",
-            settingsTitle: "Settings",
-            cursorStatusOn: "Enabled",
-            cursorStatusOff: "Disabled"
-        }
+        'pt': { buyButton: "Comprar", playButton: "Jogar", score: "Pontos", time: "Tempo", exit: "Sair" },
+        'en': { buyButton: "Buy", playButton: "Play", score: "Score", time: "Time", exit: "Exit" }
     };
 
     const produtosDB = [
@@ -1284,59 +1274,91 @@ document.addEventListener('DOMContentLoaded', () => {
         { id: 5, imagem: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400", nome: {pt: "Jogo da Cobrinha", en: "Snake Game"}, categoria: {pt: "Jogos", en: "Games"}, descricao: {pt: "Jogue o clássico diretamente no navegador!", en: "Play the classic in your browser!"}, preco: {pt: "Grátis", en: "Free"} }
     ];
 
-    // 2. SELETORES GERAIS
-    const root = document.documentElement;
-    const catalogoContainer = document.getElementById('catalogo-produtos');
-    const searchInput = document.getElementById('search-input');
-    const welcomeScreen = document.getElementById('welcome-screen');
     let currentLang = localStorage.getItem('language') || 'pt';
+    const catalogoContainer = document.getElementById('catalogo-produtos');
+    const root = document.documentElement;
 
-    // 3. LÓGICA DO SNAKE GAME
-    const initSnakeGame = (canvasId) => {
+    // Variáveis globais do controle do jogo
+    let gameInterval, timerInterval;
+
+    // --- 2. LÓGICA DO SNAKE ARCADE ---
+    const initSnakeGame = (canvasId, productId) => {
         const canvas = document.getElementById(canvasId);
-        if(!canvas) return;
         const ctx = canvas.getContext('2d');
         const box = 10;
         let snake = [{ x: 10 * box, y: 10 * box }];
         let direction = "RIGHT";
         let food = { x: Math.floor(Math.random() * 19) * box, y: Math.floor(Math.random() * 19) * box };
+        let score = 0;
+        let seconds = 0;
 
-        document.addEventListener("keydown", (e) => {
+        // Atualiza HUD
+        const scoreElement = document.getElementById('score-val');
+        const timeElement = document.getElementById('time-val');
+
+        timerInterval = setInterval(() => {
+            seconds++;
+            timeElement.innerText = seconds + 's';
+        }, 1000);
+
+        const control = (e) => {
             if(e.keyCode == 37 && direction != "RIGHT") direction = "LEFT";
             else if(e.keyCode == 38 && direction != "DOWN") direction = "UP";
             else if(e.keyCode == 39 && direction != "LEFT") direction = "RIGHT";
             else if(e.keyCode == 40 && direction != "UP") direction = "DOWN";
-        });
+        };
+        document.addEventListener("keydown", control);
 
         function draw() {
             ctx.fillStyle = "#000";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
+
             for(let i = 0; i < snake.length; i++) {
                 ctx.fillStyle = i == 0 ? getComputedStyle(root).getPropertyValue('--accent-color').trim() || "#00ff00" : "#fff";
                 ctx.fillRect(snake[i].x, snake[i].y, box, box);
             }
+
             ctx.fillStyle = "red";
             ctx.fillRect(food.x, food.y, box, box);
 
             let snakeX = snake[0].x;
             let snakeY = snake[0].y;
+
             if(direction == "LEFT") snakeX -= box;
             if(direction == "UP") snakeY -= box;
             if(direction == "RIGHT") snakeX += box;
             if(direction == "DOWN") snakeY += box;
 
             if(snakeX == food.x && snakeY == food.y) {
+                score += 10;
+                scoreElement.innerText = score;
                 food = { x: Math.floor(Math.random() * 19) * box, y: Math.floor(Math.random() * 19) * box };
             } else { snake.pop(); }
 
             let newHead = { x: snakeX, y: snakeY };
-            if(snakeX < 0 || snakeX >= canvas.width || snakeY < 0 || snakeY >= canvas.height) clearInterval(game);
+
+            // Game Over
+            if(snakeX < 0 || snakeX >= canvas.width || snakeY < 0 || snakeY >= canvas.height || 
+               snake.some((seg, index) => index !== 0 && seg.x === newHead.x && seg.y === newHead.y)) {
+                clearInterval(gameInterval);
+                clearInterval(timerInterval);
+                document.removeEventListener("keydown", control);
+                alert(`Game Over! Score: ${score}`);
+                resetCard(productId);
+                return;
+            }
             snake.unshift(newHead);
         }
-        let game = setInterval(draw, 100);
+        gameInterval = setInterval(draw, 100);
     };
 
-    // 4. RENDERIZAÇÃO DA LOJA
+    const resetCard = (id) => {
+        clearInterval(gameInterval);
+        clearInterval(timerInterval);
+        renderizarProdutos(produtosDB);
+    };
+
+    // --- 3. RENDERIZAÇÃO ---
     const renderizarProdutos = (produtos) => {
         if(!catalogoContainer) return;
         catalogoContainer.innerHTML = '';
@@ -1344,7 +1366,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const card = document.createElement('div');
             card.className = 'produto-card';
             card.innerHTML = `
-                <div id="media-container-${p.id}">
+                <div id="media-container-${p.id}" class="media-box">
                     <img src="${p.imagem}" class="produto-imagem">
                 </div>
                 <div class="produto-info">
@@ -1354,48 +1376,40 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="produto-footer">
                         <span class="produto-preco">${p.preco[currentLang]}</span>
                         <button class="btn-comprar" data-id="${p.id}">
-                            ${p.id === 5 ? (currentLang === 'pt' ? 'Jogar' : 'Play') : (translations[currentLang].buyButton)}
+                            ${p.id === 5 ? translations[currentLang].playButton : translations[currentLang].buyButton}
                         </button>
                     </div>
                 </div>`;
             catalogoContainer.appendChild(card);
         });
 
-        // Eventos dos botões
         document.querySelectorAll('.btn-comprar').forEach(btn => {
             btn.onclick = function() {
                 const id = parseInt(this.dataset.id);
                 if(id === 5) {
                     const container = document.getElementById(`media-container-5`);
-                    container.innerHTML = `<canvas id="snakeCanvas" width="200" height="200" style="width:100%; border-radius:8px;"></canvas>`;
-                    initSnakeGame('snakeCanvas');
                     this.style.display = 'none';
-                } else {
-                    alert('Produto adicionado ao carrinho!');
+                    container.innerHTML = `
+                        <div style="display:flex; justify-content:space-between; background:#111; color:#fff; padding:5px; font-family:monospace; font-size:12px;">
+                            <span>${translations[currentLang].score}: <b id="score-val">0</b></span>
+                            <span>${translations[currentLang].time}: <b id="time-val">0s</b></span>
+                            <button id="exit-game" style="background:red; border:none; color:white; cursor:pointer; padding:0 5px;">X</button>
+                        </div>
+                        <canvas id="snakeCanvas" width="200" height="200" style="width:100%; background:#000;"></canvas>
+                    `;
+                    document.getElementById('exit-game').onclick = () => resetCard(5);
+                    initSnakeGame('snakeCanvas', 5);
                 }
             };
         });
     };
 
-    // 5. INICIALIZAÇÃO E IDIOMA
-    const setLanguage = (lang) => {
-        currentLang = lang;
-        localStorage.setItem('language', lang);
-        renderizarProdutos(produtosDB);
-        // Aqui você chamaria sua função de traduzir textos estáticos do site
-    };
-
-    // Chamar inicializadores
     renderizarProdutos(produtosDB);
-    if(welcomeScreen) {
-        document.getElementById('enter-site-btn')?.addEventListener('click', () => {
-            welcomeScreen.style.display = 'none';
-        });
-    }
 });
 </script>
-
+    
 </body>
 
 </html>
+
 
